@@ -5661,6 +5661,10 @@ enum {
 #define _MWL8K_8764_AP_FW(api) "mwl8k/fmimage_8764_ap-" #api ".fw"
 #define MWL8K_8764_AP_FW(api) _MWL8K_8764_AP_FW(api)
 
+#define MWL8K_8864_AP_FW_API 0
+#define _MWL8K_8864_AP_FW(api) "mwl8k/fmimage_8864_ap-" #api ".fw"
+#define MWL8K_8864_AP_FW(api) _MWL8K_8864_AP_FW(api)
+
 static struct mwl8k_device_info mwl8k_info_tbl[] = {
 	[MWL8363] = {
 		.part_name	= "88w8363",
@@ -5688,8 +5692,8 @@ static struct mwl8k_device_info mwl8k_info_tbl[] = {
 	},
 	[MWL8864] = {
 		.part_name	= "88w8864",
-		.fw_image_ap    = MWL8K_8764_AP_FW(MWL8K_8764_AP_FW_API),
-		.fw_api_ap      = MWL8K_8764_AP_FW_API,
+		.fw_image_ap    = MWL8K_8864_AP_FW(MWL8K_8864_AP_FW_API),
+		.fw_api_ap      = MWL8K_8864_AP_FW_API,
 		.ap_rxd_ops     = &rxd_ap_ops,
 	},
 };

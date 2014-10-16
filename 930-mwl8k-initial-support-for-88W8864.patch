@@ -1,7 +1,7 @@
 Index: compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c
 ===================================================================
---- compat-wireless-2014-09-26.orig/drivers/net/wireless/mwl8k.c	2014-10-15 16:56:05.042465217 -0700
-+++ compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c	2014-10-15 16:57:39.666461907 -0700
+--- compat-wireless-2014-09-26.orig/drivers/net/wireless/mwl8k.c	2014-10-16 12:29:11.981084043 -0500
++++ compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c	2014-10-16 12:32:19.713077476 -0500
 @@ -199,7 +199,7 @@
  	struct ieee80211_channel channels_24[14];
  	struct ieee80211_rate rates_24[13];
@@ -81,20 +81,31 @@ Index: compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c
  };
  
  #define MWL8K_8366_AP_FW_API 3
-@@ -5664,6 +5686,12 @@
+@@ -5639,6 +5661,10 @@
+ #define _MWL8K_8764_AP_FW(api) "mwl8k/fmimage_8764_ap-" #api ".fw"
+ #define MWL8K_8764_AP_FW(api) _MWL8K_8764_AP_FW(api)
+ 
++#define MWL8K_8864_AP_FW_API 0
++#define _MWL8K_8864_AP_FW(api) "mwl8k/fmimage_8864_ap-" #api ".fw"
++#define MWL8K_8864_AP_FW(api) _MWL8K_8864_AP_FW(api)
++
+ static struct mwl8k_device_info mwl8k_info_tbl[] = {
+ 	[MWL8363] = {
+ 		.part_name	= "88w8363",
+@@ -5664,6 +5690,12 @@
  		.fw_api_ap	= MWL8K_8764_AP_FW_API,
  		.ap_rxd_ops	= &rxd_ap_ops,
  	},
 +	[MWL8864] = {
 +		.part_name	= "88w8864",
-+		.fw_image_ap    = MWL8K_8764_AP_FW(MWL8K_8764_AP_FW_API),
-+		.fw_api_ap      = MWL8K_8764_AP_FW_API,
++		.fw_image_ap    = MWL8K_8864_AP_FW(MWL8K_8864_AP_FW_API),
++		.fw_api_ap      = MWL8K_8864_AP_FW_API,
 +		.ap_rxd_ops     = &rxd_ap_ops,
 +	},
  };
  
  MODULE_FIRMWARE("mwl8k/helper_8363.fw");
-@@ -5686,6 +5714,7 @@
+@@ -5686,6 +5718,7 @@
  	{ PCI_VDEVICE(MARVELL, 0x2a42), .driver_data = MWL8366, },
  	{ PCI_VDEVICE(MARVELL, 0x2a43), .driver_data = MWL8366, },
  	{ PCI_VDEVICE(MARVELL, 0x2b36), .driver_data = MWL8764, },
@@ -102,7 +113,7 @@ Index: compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c
  	{ },
  };
  MODULE_DEVICE_TABLE(pci, mwl8k_pci_id_table);
-@@ -6205,8 +6234,8 @@
+@@ -6205,8 +6238,8 @@
  	priv->pdev = pdev;
  	priv->device_info = &mwl8k_info_tbl[id->driver_data];
  
