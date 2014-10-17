@@ -31,9 +31,9 @@
 
 /* Module parameters */
 static bool ap_mode_default;
-module_param(ap_mode_default, bool, 0);
+module_param(ap_mode_default, bool, 1);
 MODULE_PARM_DESC(ap_mode_default,
-		 "Set to 1 to make ap mode the default instead of sta mode");
+		 "Default is 1; Set to 0 to make sta mode the default instead of ap mode");
 
 /* Register definitions */
 #define MWL8K_HIU_GEN_PTR			0x00000c10

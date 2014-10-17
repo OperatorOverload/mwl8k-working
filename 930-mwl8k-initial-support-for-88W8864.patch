@@ -1,7 +1,19 @@
 Index: compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c
 ===================================================================
---- compat-wireless-2014-09-26.orig/drivers/net/wireless/mwl8k.c	2014-10-16 12:29:11.981084043 -0500
-+++ compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c	2014-10-16 12:32:19.713077476 -0500
+--- compat-wireless-2014-09-26.orig/drivers/net/wireless/mwl8k.c	2014-10-17 10:29:33.488537382 -0500
++++ compat-wireless-2014-09-26/drivers/net/wireless/mwl8k.c	2014-10-17 10:30:25.332535569 -0500
+@@ -31,9 +31,9 @@
+ 
+ /* Module parameters */
+ static bool ap_mode_default;
+-module_param(ap_mode_default, bool, 0);
++module_param(ap_mode_default, bool, 1);
+ MODULE_PARM_DESC(ap_mode_default,
+-		 "Set to 1 to make ap mode the default instead of sta mode");
++		 "Default is 1; Set to 0 to make sta mode the default instead of ap mode");
+ 
+ /* Register definitions */
+ #define MWL8K_HIU_GEN_PTR			0x00000c10
 @@ -199,7 +199,7 @@
  	struct ieee80211_channel channels_24[14];
  	struct ieee80211_rate rates_24[13];
