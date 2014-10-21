@@ -290,7 +290,7 @@ struct mwl8k_priv {
 	char *fw_pref;
 	char *fw_alt;
 	bool is_8764;
-	bool is_8X64;
+	bool is_8864;
 	struct completion firmware_loading_complete;
 
 	/* bitmap of running BSSes */
@@ -632,7 +632,7 @@ mwl8k_send_fw_load_cmd(struct mwl8k_priv *priv, void *data, int length)
 	loops = 1000;
 	do {
 		u32 int_code;
-		if (priv->is_8X64) {
+		if (priv->is_8764 || priv->is_8864) {
 			int_code = ioread32(regs +
 					    MWL8K_HIU_H2A_INTERRUPT_STATUS);
 			if (int_code == 0)
@@ -761,7 +761,7 @@ static int mwl8k_load_firmware(struct ieee80211_hw *hw)
 	int rc;
 	int loops;
 
-	if (!memcmp(fw->data, "\x01\x00\x00\x00", 4) && !priv->is_8X64) {
+	if (!memcmp(fw->data, "\x01\x00\x00\x00", 4) && !(priv->is_8764 || priv->is_8864)) {
 		const struct firmware *helper = priv->fw_helper;
 
 		if (helper == NULL) {
@@ -780,7 +780,7 @@ static int mwl8k_load_firmware(struct ieee80211_hw *hw)
 
 		rc = mwl8k_feed_fw_image(priv, fw->data, fw->size);
 	} else {
-		if (priv->is_8X64)
+		if (priv->is_8764 || priv->is_8864)
 			rc = mwl8k_feed_fw_image(priv, fw->data, fw->size);
 		else
 			rc = mwl8k_load_fw_image(priv, fw->data, fw->size);
@@ -3150,7 +3150,14 @@ struct mwl8k_cmd_set_rf_channel {
 	__u8 current_channel;
 	__le32 channel_flags;
 } __packed;
-
+/*
+* 8864 channel flags
+* Frequency_band: 6 bits + Channel Width: 5 bits + ActPrimary: 3 bits + 
+* Reserved: 18 bits = 32 bits
+* Everything else
+* Frequency_band: 6 bits + Channel Width: 5 bits + ExtChnlOffset: 2 bits +
+* Reserved: 19 bits = 32 bits
+*/
 static int mwl8k_cmd_set_rf_channel(struct ieee80211_hw *hw,
 				    struct ieee80211_conf *conf)
 {
@@ -3179,10 +3186,23 @@ static int mwl8k_cmd_set_rf_channel(struct ieee80211_hw *hw,
 		if (channel_type == NL80211_CHAN_NO_HT ||
 		    channel_type == NL80211_CHAN_HT20)
 			cmd->channel_flags |= cpu_to_le32(0x00000080);
-		else if (channel_type == NL80211_CHAN_HT40MINUS)
-			cmd->channel_flags |= cpu_to_le32(0x000001900);
-		else if (channel_type == NL80211_CHAN_HT40PLUS)
-			cmd->channel_flags |= cpu_to_le32(0x000000900);
+			/*20 Mhz channel*/
+		else if (channel_type == NL80211_CHAN_HT40MINUS) {
+			if (!priv->is_8864) {
+				cmd->channel_flags |= cpu_to_le32(0x000001900);
+			/*Below*/
+			} else {
+				cmd->channel_flags |= cpu_to_le32(0x000000900);
+			}
+		}
+		else if (channel_type == NL80211_CHAN_HT40PLUS) {
+			if (!priv->is_8864) {
+				cmd->channel_flags |= cpu_to_le32(0x000000900);
+			/*Above*/
+			} else {
+				cmd->channel_flags |= cpu_to_le32(0x000000100);
+			}
+		}
 	} else {
 		cmd->channel_flags |= cpu_to_le32(0x00000080);
 	}
@@ -6238,8 +6258,10 @@ static int mwl8k_probe(struct pci_dev *pdev,
 	priv->pdev = pdev;
 	priv->device_info = &mwl8k_info_tbl[id->driver_data];
 
-	if (id->driver_data == MWL8764 || (id->driver_data == MWL8864))
-		priv->is_8X64 = true;
+	if (id->driver_data == MWL8764)
+		priv->is_8764 = true;
+	if (id->driver_data == MWL8864)
+		priv->is_8864 = true;
 
 	priv->sram = pci_iomap(pdev, 0, 0x10000);
 	if (priv->sram == NULL) {
