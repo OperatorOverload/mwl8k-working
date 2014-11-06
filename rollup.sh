@@ -3,13 +3,18 @@ set -eu
 
 pushd .
 pushd ~/openwrt
+cp -f ~/mwl8k-working/008-fix_netdev_unregister.patch package/kernel/mac80211/patches/008-fix_netdev_unregister.patch
+if [ $? != 0 ]
+then
+	exit $?
+fi
 prep="$(make package/kernel/mac80211/{clean,prepare} V=s QUILT=1)"
 if [ $? != 0 ] 
 then
 	exit $?
 fi
 pushd build_dir/target*/linux-mvebu/compat-wireless*/
-quilt_push="$(quilt push 930-mwl8k-initial-support-for-88W8864.patch)"
+quilt_push="$(quilt push -a)"
 if [ $? != 0 ] 
 then
 	exit $?
@@ -37,5 +42,8 @@ if [ $? != 0 ]
 then
 	exit $?
 fi
-
 cp -f ~/openwrt/package/kernel/mac80211/patches/930-mwl8k-initial-support-for-88W8864.patch ~/mwl8k-working/
+if [ $? != 0 ]
+then
+	exit $?
+fi

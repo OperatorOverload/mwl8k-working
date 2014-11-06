@@ -83,14 +83,92 @@
  			rc = mwl8k_feed_fw_image(priv, fw->data, fw->size);
  		else
  			rc = mwl8k_load_fw_image(priv, fw->data, fw->size);
-@@ -3129,7 +3150,14 @@ struct mwl8k_cmd_set_rf_channel {
+@@ -1159,11 +1180,12 @@ static int mwl8k_rxq_init(struct ieee802
+ 
+ 	size = MWL8K_RX_DESCS * priv->rxd_ops->rxd_size;
+ 
+-	rxq->rxd = pci_zalloc_consistent(priv->pdev, size, &rxq->rxd_dma);
++	rxq->rxd = pci_alloc_consistent(priv->pdev, size, &rxq->rxd_dma);
+ 	if (rxq->rxd == NULL) {
+ 		wiphy_err(hw->wiphy, "failed to alloc RX descriptors\n");
+ 		return -ENOMEM;
+ 	}
++	memset(rxq->rxd, 0, size);
+ 
+ 	rxq->buf = kcalloc(MWL8K_RX_DESCS, sizeof(*rxq->buf), GFP_KERNEL);
+ 	if (rxq->buf == NULL) {
+@@ -1450,11 +1472,12 @@ static int mwl8k_txq_init(struct ieee802
+ 
+ 	size = MWL8K_TX_DESCS * sizeof(struct mwl8k_tx_desc);
+ 
+-	txq->txd = pci_zalloc_consistent(priv->pdev, size, &txq->txd_dma);
++	txq->txd = pci_alloc_consistent(priv->pdev, size, &txq->txd_dma);
+ 	if (txq->txd == NULL) {
+ 		wiphy_err(hw->wiphy, "failed to alloc TX descriptors\n");
+ 		return -ENOMEM;
+ 	}
++	 memset(txq->txd, 0, size);
+ 
+ 	txq->skb = kcalloc(MWL8K_TX_DESCS, sizeof(*txq->skb), GFP_KERNEL);
+ 	if (txq->skb == NULL) {
+@@ -2414,7 +2437,32 @@ mwl8k_set_ht_caps(struct ieee80211_hw *h
+ 				IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT;
+ 	}
+ }
++/*
++#define MWL8K_VHT_CAP_RXLDPC
++#define MWL8K_VHT_CAP_SHORT_GI_80
++#define MWL8K_VHT_CAP_SHORT_GI_160
++#define MWL8K_VHT_CAP_RXSTBC_1
++#define MWL8K_VHT_CAP_RXSTBC_2
++#define MWL8K_VHT_CAP_RXSTBC_3
++#define MWL8K_VHT_CAP_RXSTBC_4
++#define MWL8K_VHT_CAP_TXSTBC
++#define MWL8K_VHT_CAP_SU_BEAMFORMER_CAPABLE
++#define MWL8K_VHT_CAP_SU_BEAMFORMEE_CAPABLE
++#define MWL8K_VHT_CAP_TX_ANTENNA_PATTERN
++#define MWL8K_VHT_CAP_RX_ANTENNA_PATTERN
++#define MWL8K_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK
++
++
++static void
++mwl8k_set_vht_caps(struct ieee80211_hw *hw,
++		   struct ieee80211_supported_band *band, u32 cap)
++{
++	band->vht_cap.vht_supported = 1;
++	if (cap & MWL8K_VHT_CAP_RXLDPC)
++		band->vht_cap.cap |= IEEE80211_VHT_CAP_RXLDPC;
+ 
++}
++*/
+ static void
+ mwl8k_set_caps(struct ieee80211_hw *hw, u32 caps)
+ {
+@@ -2539,6 +2587,7 @@ static int mwl8k_cmd_get_hw_spec_ap(stru
+ 		priv->num_mcaddrs = le16_to_cpu(cmd->num_mcaddrs);
+ 		priv->fw_rev = le32_to_cpu(cmd->fw_rev);
+ 		priv->hw_rev = cmd->hw_rev;
++		printk(KERN_INFO "listed caps: %lx",cmd->caps);
+ 		mwl8k_set_caps(hw, le32_to_cpu(cmd->caps));
+ 		priv->ap_macids_supported = 0x000000ff;
+ 		priv->sta_macids_supported = 0x00000100;
+@@ -2644,7 +2693,7 @@ static int mwl8k_cmd_set_hw_spec(struct
+ 
+ 	rc = mwl8k_post_cmd(hw, &cmd->header);
+ 	kfree(cmd);
+-
++	printk(KERN_INFO "mwl8k_cmd_set_hw_spec rc: %d\n",rc);
+ 	return rc;
+ }
+ 
+@@ -3129,7 +3178,14 @@ struct mwl8k_cmd_set_rf_channel {
  	__u8 current_channel;
  	__le32 channel_flags;
  } __packed;
 -
 +/*
 +* 8864 channel flags
-+* Frequency_band: 6 bits + Channel Width: 5 bits + ActPrimary: 3 bits + 
++* Frequency_band: 6 bits + Channel Width: 5 bits + ActPrimary: 3 bits +
 +* Reserved: 18 bits = 32 bits
 +* Everything else
 +* Frequency_band: 6 bits + Channel Width: 5 bits + ExtChnlOffset: 2 bits +
@@ -99,7 +177,7 @@
  static int mwl8k_cmd_set_rf_channel(struct ieee80211_hw *hw,
  				    struct ieee80211_conf *conf)
  {
-@@ -3158,10 +3186,23 @@ static int mwl8k_cmd_set_rf_channel(stru
+@@ -3158,10 +3214,23 @@ static int mwl8k_cmd_set_rf_channel(stru
  		if (channel_type == NL80211_CHAN_NO_HT ||
  		    channel_type == NL80211_CHAN_HT20)
  			cmd->channel_flags |= cpu_to_le32(0x00000080);
@@ -127,7 +205,7 @@
  	} else {
  		cmd->channel_flags |= cpu_to_le32(0x00000080);
  	}
-@@ -5629,6 +5670,7 @@ enum {
+@@ -5629,6 +5698,7 @@ enum {
  	MWL8687,
  	MWL8366,
  	MWL8764,
@@ -135,7 +213,7 @@
  };
  
  #define MWL8K_8366_AP_FW_API 3
-@@ -5639,6 +5681,10 @@ enum {
+@@ -5639,6 +5709,10 @@ enum {
  #define _MWL8K_8764_AP_FW(api) "mwl8k/fmimage_8764_ap-" #api ".fw"
  #define MWL8K_8764_AP_FW(api) _MWL8K_8764_AP_FW(api)
  
@@ -146,7 +224,7 @@
  static struct mwl8k_device_info mwl8k_info_tbl[] = {
  	[MWL8363] = {
  		.part_name	= "88w8363",
-@@ -5664,6 +5710,12 @@ static struct mwl8k_device_info mwl8k_in
+@@ -5664,6 +5738,12 @@ static struct mwl8k_device_info mwl8k_in
  		.fw_api_ap	= MWL8K_8764_AP_FW_API,
  		.ap_rxd_ops	= &rxd_ap_ops,
  	},
@@ -159,7 +237,16 @@
  };
  
  MODULE_FIRMWARE("mwl8k/helper_8363.fw");
-@@ -5686,6 +5738,7 @@ static const struct pci_device_id mwl8k_
+@@ -5674,7 +5754,7 @@ MODULE_FIRMWARE("mwl8k/helper_8366.fw");
+ MODULE_FIRMWARE("mwl8k/fmimage_8366.fw");
+ MODULE_FIRMWARE(MWL8K_8366_AP_FW(MWL8K_8366_AP_FW_API));
+ 
+-static const struct pci_device_id mwl8k_pci_id_table[] = {
++static DEFINE_PCI_DEVICE_TABLE(mwl8k_pci_id_table) = {
+ 	{ PCI_VDEVICE(MARVELL, 0x2a02), .driver_data = MWL8363, },
+ 	{ PCI_VDEVICE(MARVELL, 0x2a0a), .driver_data = MWL8363, },
+ 	{ PCI_VDEVICE(MARVELL, 0x2a0c), .driver_data = MWL8363, },
+@@ -5686,6 +5766,7 @@ static const struct pci_device_id mwl8k_
  	{ PCI_VDEVICE(MARVELL, 0x2a42), .driver_data = MWL8366, },
  	{ PCI_VDEVICE(MARVELL, 0x2a43), .driver_data = MWL8366, },
  	{ PCI_VDEVICE(MARVELL, 0x2b36), .driver_data = MWL8764, },
@@ -167,7 +254,24 @@
  	{ },
  };
  MODULE_DEVICE_TABLE(pci, mwl8k_pci_id_table);
-@@ -6207,6 +6260,8 @@ static int mwl8k_probe(struct pci_dev *p
+@@ -5838,6 +5919,7 @@ static int mwl8k_init_txqs(struct ieee80
+ 			iowrite32(priv->txq[i].txd_dma,
+ 				  priv->sram + priv->txq_offset[i]);
+ 	}
++	printk(KERN_INFO "mwl8k_init_txqs rc: %d\n",rc);
+ 	return rc;
+ }
+ 
+@@ -5962,7 +6044,7 @@ static int mwl8k_probe_hw(struct ieee802
+ 		   priv->ap_fw ? "AP" : "STA",
+ 		   (priv->fw_rev >> 24) & 0xff, (priv->fw_rev >> 16) & 0xff,
+ 		   (priv->fw_rev >> 8) & 0xff, priv->fw_rev & 0xff);
+-
++	printk(KERN_INFO "Successful init");
+ 	return 0;
+ 
+ err_free_irq:
+@@ -6207,6 +6289,8 @@ static int mwl8k_probe(struct pci_dev *p
  
  	if (id->driver_data == MWL8764)
  		priv->is_8764 = true;
@@ -176,3 +280,20 @@
  
  	priv->sram = pci_iomap(pdev, 0, 0x10000);
  	if (priv->sram == NULL) {
+@@ -6289,6 +6373,7 @@ static void mwl8k_remove(struct pci_dev
+ 	if (hw == NULL)
+ 		return;
+ 	priv = hw->priv;
++	printk(KERN_WARNING "hw not null\n");
+ 
+ 	wait_for_completion(&priv->firmware_loading_complete);
+ 
+@@ -6298,7 +6383,7 @@ static void mwl8k_remove(struct pci_dev
+ 	}
+ 
+ 	ieee80211_stop_queues(hw);
+-
++	printk(KERN_WARNING "hw is %d\n", hw);
+ 	ieee80211_unregister_hw(hw);
+ 
+ 	/* Remove TX reclaim and RX tasklets.  */
