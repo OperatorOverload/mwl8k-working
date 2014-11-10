@@ -3,11 +3,6 @@ set -eu
 
 pushd .
 pushd ~/openwrt
-cp -f ~/mwl8k-working/008-fix_netdev_unregister.patch package/kernel/mac80211/patches/008-fix_netdev_unregister.patch
-if [ $? != 0 ]
-then
-	exit $?
-fi
 prep="$(make package/kernel/mac80211/{clean,prepare} V=s QUILT=1)"
 if [ $? != 0 ] 
 then
